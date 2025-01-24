@@ -5,47 +5,65 @@
 
 #include <WiFi.h>
 //#include <WebServer.h>
-#include <WiFiAP.h>
+/*#include <WiFiAP.h>*/
 
-#define LED_BUILTIN 13
+#define BOTON 27
 
 // Se crea la red de Access Point (AP)
 const char* ssid = "SAPE.net";
 const char* password = "SAPE_2024";
 
-bool led_on = false;
-//WebServer server(80);
+// Configuración TCP
+const char* servidorIP = "192.168.4.1";
+const int puertoTCP = 1000;
+
+WiFiClient cliente;
+
+bool lastState = LOW;
+
 
 void setup() {
-  //Puertos
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  //
   Serial.begin(115200);
-  Serial.println();
-  Serial.println("Configurando Access Point :D");
-    
-  // put your setup code here, to run once:
-  WiFi.softAP(ssid, password);                      // Configura la red con el nombre y contraseña previamente declarados (ln 12)
-  IPAddress AP_IP = WiFi.softAPIP();                // Obtiene la IP del dispositivo Servidor 
-  Serial.print("Esta es la IP: ");                  
-  Serial.println(AP_IP);                            // Muestra la IP de la red
+  
+  //Puertos
+  pinMode(BOTON, INPUT_PULLUP);
 
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED){
+    delay (500);
+    Serial.print(".");
+  }
+
+  Serial.println("Conexión establcia con el punto de acceso...");
+
+  if(cliente.connect(servidorIP, puertoTCP)){
+    Serial.println("Conexión TCP establecida con el servidor.");
+  } else {
+    Serial.println("No se logro conectar con el servidor");
+  }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  // Print the number of conections
-    Serial.print("Dispositivos conectados: ");
-    Serial.println(WiFi.softAPgetStationNum());
-    // Blink led
-    if (led_on == false) {
-        digitalWrite(LED_BUILTIN, HIGH);
-    }
-    else {
-        digitalWrite(LED_BUILTIN, LOW);
-    }
-    led_on = !led_on;
-    delay(500);
+  
+  if (!cliente.connected()){
+    Serial.println("Conexión perdida... Reconectado...");
+    cliente.connect(servidorIP, puertoTCP);
+    delay(1000);
+    return;
+  }
 
+  bool actualState = digitalRead(BOTON) == LOW;
+  if(actualState != lastState){
+    lastState = actualState;
+
+    if(actualState){
+      cliente.println("ENCENDER");
+      Serial.println("Commado enviado: ENCENDER");
+    } else {
+      cliente.println("APAGAR");
+      Serial.println("Comando enviado: APAGAR");
+    }
+  }
 }
+
+ 
