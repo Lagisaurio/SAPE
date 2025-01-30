@@ -1,46 +1,116 @@
-/Librerias
-#include <EEPROM.h>
+/*
+  Fecha de edición: 30/01/25
+  Código: Bahía - SAPE
+  Editor: Luis Fuentes
+  
+  Descripción:
+  
+
+*/
+#include <WiFi.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include <EEPROM.h>
 
-//Declaración de Pines ESP32
-//Modulos
-#define SS_PIN 5             // Pin del esclavo seleccionado (SDA)
-#define RST_PIN 22           // Pin de reset del MFRC522, configurado para el ESP32
+// Configuración del Access Point
+const char* ssid = "SAPE.net";
+const char* password = "SAPE_2024";
 
-//Constantes
-#define EEPROM_SIZE 4        // Tamaño de la memoria EEPROM para almacenar la UID de la tarjeta
-#define MIN_DISTANCE 20      // Distancia minima del sensor ultrasonicoo para activar led
+const int puertoTCP = 1000; // Puerto del servidor TCP
+WiFiServer servidor(puertoTCP);
 
-enum Estado{
-  IGUAL,
-  DIFERENTE,
-};
+// Configuración del lector RFID
+#define SS_PIN 21
+#define RST_PIN 22
+MFRC522 rfid(SS_PIN, RST_PIN);
 
-Estado memoria;
+// Lista de UIDs válidos
 
-MFRC522 mfrc522(SS_PIN, RST_PIN);  // Crea el objeto MFRC522
+const String UID_VALIDO = "63D2EB95";
+const String UID_VALIDO2 = "1B11E623";
+const String UID_VALIDO3 = "5D2EDE89";
 
-byte almacenarUID[EEPROM_SIZE] = {}; // Inicializa la memoria almacenada
-byte masterUID[EEPROM_SIZE] = {0x5D, 0x2E, 0xDE, 0x89}; //5D 2E DE 89
+String tarjetaActiva ="";
+//byte almacenarUID[EEPROM_SIZE] = {};               // UID almacenado en memoria
+//byte masterUID[EEPROM_SIZE] = {0x5D, 0x2E, 0xDE, 0x89}; // UID maestro
+
+WiFiClient cliente;
+
+// Estado del LED
+bool ledEncendido = false; // Inicialmente apagado
+
 
 void setup() {
   Serial.begin(115200);
   SPI.begin();
-  mfrc522.PCD_Init();
-  delayMicroseconds(2);
+  rfid.PCD_Init();
+  Serial.println("Lector RFID inicializado.");
+
+  // Configurar ESP32 como Access Point
+  WiFi.softAP(ssid, password);
+
+  // Obtener la IP del AP
+  IPAddress IP = WiFi.softAPIP();
+  Serial.print("Punto de acceso iniciado. IP: ");
+  Serial.println(IP);
+
+  // Iniciar el servidor TCP
+  servidor.begin();
+  Serial.println("Servidor TCP iniciado. Esperando conexiones...");
 }
 
 void loop() {
-  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
-    // Muestra la UID de la tarjeta
-    Serial.print("UID de la tarjeta: ");
-    imprime_dato_tarjeta(mfrc522.uid.uidByte, mfrc522.uid.size);
-    
-    // Compara la UID leída con la almacenada en la memoria y con el masterUID
-    bool sameUID = comparar_uid(mfrc522.uid.uidByte, mfrc522.uid.size, almacenarUID, EEPROM_SIZE);
-    bool masterUIDBool = comparar_uid(mfrc522.uid.uidByte, mfrc522.uid.size, masterUID, EEPROM_SIZE);
-    Serial.println("------------------------------\nDetección de tarjeta\n------------------------------");
+  // Aceptar cliente entrante
+  if (!cliente || !cliente.connected()) {
+    cliente = servidor.available();
+    if (cliente) {
+      Serial.println("Cliente conectado.");
+    }
+  }
 
+  // Detectar tarjeta RFID
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+    // Leer UID de la tarjeta
+    String uid = "";
+    for (byte i = 0; i < rfid.uid.size; i++) {
+      uid += String(rfid.uid.uidByte[i], HEX);
+    }
+    uid.toUpperCase();
+    Serial.println("UID leído: " + uid);
 
+    // Verificar UID y alternar estado del LED
+    if (uid == UID_VALIDO || uid == UID_VALIDO2 || uid == UID_VALIDO3) {
+      if (cliente && cliente.connected()) {
+        if (ledEncendido && tarjetaActiva == uid) {
+          cliente.println("APAGAR"); // Comando para apagar el LED
+          Serial.println("Comando enviado: APAGAR");
+          ledEncendido = false; // Cambiar estado
+          tarjetaActiva = "";
+        } else if (ledEncendido && tarjetaActiva != uid) {
+          cliente.println("ALARMA");
+          Serial.println("Comando enviado: ALARMA");
+        } else {
+          tarjetaActiva = uid;
+          cliente.println("ENCENDER"); // Comando para encender el LED
+          Serial.println("Comando enviado: ENCENDER");
+          ledEncendido = true; // Cambiar estado
+        }
+      }
+    }
+     else {
+      Serial.println("UID no reconocido.");
+    }
 
+    // Detener comunicación con la tarjeta
+    rfid.PICC_HaltA();
+    delay(1000);
+  }
+}
+
+void imprime_dato_tarjeta(byte *buffer, byte bufferSize) {
+  for (byte i = 0; i < bufferSize; i++) {
+    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i], HEX);
+  }
+  Serial.println();
+}
