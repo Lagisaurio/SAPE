@@ -70,13 +70,15 @@ void loop() {
 //Receptor
 
 #include <WiFi.h>
+#include "HX711.h"
 
 
 // Sensores
-#define INFRARROJO 15
+#define INFRARROJO 2
 #define TRIGGER    23
 #define ECHO       22
-#define GALGA      19
+#define GALGA_DT   19
+#define GALGA_SCK  18
 
 // Constantes de medición
 #define DISTANCIA_MIN   10
@@ -96,39 +98,48 @@ const int ledPin12 = 12;  // !OCUPACIÓN
 const int ledPin2 = 14;   //ALARMA
 const int galgaPin = 21;
 const int ultrasonicoPin = 32;
-const int irPin = 33;
 
+float peso_umbral = 20.0;
+float factor_calibracion = 2280.0;
+
+HX711 scale(GALGA_DT,GALGA_SCK);
 const int salidaPin = 4;
 
-volatile bool irInterrupt = false;
+//volatile bool irInterrupt = false;
 bool salidaGalga = false;
 bool ultrasonicoDetecta = false;
+bool irDetecta = false;
 
-void galga_test(){
-  int galgaAux = digitalRead(GALGA);
-  if (galgaAux){
-    Serial.println("---- SENSADO DE LA GALGA ----");
+void galga_test(){       // Si da lecturas erroneas, reiniciar ESP32
+  
+  float lectura = scale.get_units(10);
+
+  Serial.print("Peso: ");
+  Serial.print(lectura);
+  Serial.println(" KG");
+
+  if (lectura >= peso_umbral){
+    //Serial.println("---- SENSADO DE LA GALGA ----");
     salidaGalga = true;
     digitalWrite(galgaPin, HIGH);
   } else {
     salidaGalga = false;
     digitalWrite(galgaPin,LOW);
   }
-}
-
-void IRAM_ATTR handleIRInterrupt() {
-  irInterrupt = true;
+  delay(100);
+  
 }
 
 void infrarrojo_test(){
-  if(irInterrupt){
-    digitalWrite(irPin, HIGH);
-    Serial.println("**** Infrarrojo Sensado ****");
-    delay(500);
-    irInterrupt = false;
+  int irAux = digitalRead(INFRARROJO);
+  if(!irAux){
+
+    //Serial.println("**** INFRARROJO NO ESTA SESANDO ****");
+    irDetecta = false;
   } else {
-    Serial.println("¡¡¡ INFRARROJO DEJO DE SENSAR !!!");
-    digitalWrite(irPin, LOW);
+    irDetecta = true;
+    //Serial.println("¡¡¡¡ INFRARROJO SENSANDO !!!!");
+    
   }
 }
 
@@ -146,7 +157,7 @@ void ultrasonico_test(){
     digitalWrite(ultrasonicoPin, LOW);
   }
 
-  delay(1000);
+  delay(100);
 }
 
 long medir_distancia(int triggerPin, int echoPin) {
@@ -163,8 +174,13 @@ long medir_distancia(int triggerPin, int echoPin) {
   return duracion/58;
 } 
 
+
 void setup() {
   Serial.begin(115200);
+
+  scale.set_scale(factor_calibracion);  // Sin factor de escala, solo lecturas crudas
+  scale.tare();       // Ajustar la celda de carga a cero
+
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
   pinMode(ledPin2, OUTPUT);
@@ -179,14 +195,8 @@ void setup() {
   digitalWrite(galgaPin,LOW);
   pinMode(ultrasonicoPin, OUTPUT);
   digitalWrite(ultrasonicoPin,LOW);
-  pinMode(irPin, OUTPUT);
-  digitalWrite(irPin,LOW);
-  pinMode(INFRARROJO, INPUT);
   pinMode(TRIGGER, OUTPUT);
   pinMode(ECHO, INPUT);
-
-
-  attachInterrupt(digitalPinToInterrupt(INFRARROJO), handleIRInterrupt, CHANGE);
 
   digitalWrite(TRIGGER, LOW);
   delayMicroseconds(2);
@@ -214,7 +224,7 @@ void loop() {
   galga_test();
   infrarrojo_test();
 
-  if(salidaGalga && ultrasonicoDetecta){
+  if(salidaGalga && ultrasonicoDetecta && irDetecta ){
     digitalWrite(salidaPin, HIGH);
   } else {
     digitalWrite(salidaPin, LOW);
