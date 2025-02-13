@@ -1,5 +1,3 @@
-
-
 #include <WiFi.h>
 #include <SPI.h>
 #include <MFRC522.h>
@@ -31,11 +29,11 @@ String tarjetaActiva ="";
 //byte almacenarUID[EEPROM_SIZE] = {};               // UID almacenado en memoria
 //byte masterUID[EEPROM_SIZE] = {0x5D, 0x2E, 0xDE, 0x89}; // UID maestro
 
-WiFiClient cliente;
+WiFiClient cliente1, cliente2;
 
 // Estado del LED
-bool ledEncendido = false; // Inicialmente apagado
-
+bool disponible1 = false; // Inicialmente apagado
+bool disponible2 = false;
 
 void setup() {
   Serial.begin(115200);
@@ -70,13 +68,32 @@ void setup() {
 
 void loop() {
   // Aceptar cliente entrante
-  if (!cliente || !cliente.connected()) {
+  /*if (!cliente || !cliente.connected()) {
     cliente = servidor.available();
     if (cliente) {
       Serial.println("Cliente conectado.");
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Cliente conectado");
+    }
+  }*/
+  WiFiClient nuevoCliente = servidor.available();
+  if (nuevoCliente) {
+    if (!cliente1) {
+      cliente1 = nuevoCliente;
+      Serial.println("Cliente 1 conectado.");
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Cliente 1 conectado");
+    } else if (!cliente2) {
+      cliente2 = nuevoCliente;
+      Serial.println("Cliente 2 conectado.");
+      lcd.clear();
+      lcd.setCursor(0, 1);
+      lcd.print("Cliente 2 conectado");
+    } else {
+      Serial.println("Cliente rechazado (máximo alcanzado)");
+      nuevoCliente.stop();
     }
   }
 
@@ -98,28 +115,50 @@ void loop() {
 
     // Verificar UID y alternar estado del LED
     if (uid == UID_VALIDO || uid == UID_VALIDO2 || uid == UID_VALIDO3) {
-      if (cliente && cliente.connected()) {
-        if (ledEncendido && tarjetaActiva == uid) {
-          cliente.println("APAGAR"); // Comando para apagar el LED
+      if (cliente1 && cliente1.connected() && !disponible1) {
+        if (disponible1 && tarjetaActiva == uid) {
+          cliente1.println("APAGAR"); // Comando para apagar el LED
           Serial.println("Comando enviado: APAGAR");
           lcd.setCursor(0, 2);
           lcd.print("Comando: APAGAR");
-          ledEncendido = false; // Cambiar estado
+          disponible1 = false; // Cambiar estado
           tarjetaActiva = "";
-        } else if (ledEncendido && tarjetaActiva != uid) {
-          cliente.println("ALARMA");
+        } else if (disponible1 && tarjetaActiva != uid) {
+          cliente1.println("ALARMA");
           Serial.println("Comando enviado: ALARMA");
           lcd.setCursor(0, 2);
           lcd.print("Comando: ALARMA");
         } else {
           tarjetaActiva = uid;
-          cliente.println("ENCENDER"); // Comando para encender el LED
+          cliente1.println("ENCENDER"); // Comando para encender el LED
           Serial.println("Comando enviado: ENCENDER");
           lcd.setCursor(0, 2);
           lcd.print("Comando: ENCENDER");
-          ledEncendido = true; // Cambiar estado
+          disponible1 = true; // Cambiar estado
+        }
+      } else if (cliente2 && cliente2.connected() && disponible1) {
+        if (disponible2 && tarjetaActiva == uid) {
+          cliente2.println("APAGAR"); // Comando para apagar el LED
+          Serial.println("Comando enviado: APAGAR");
+          lcd.setCursor(0, 2);
+          lcd.print("Comando: APAGAR");
+          disponible2 = false; // Cambiar estado
+          tarjetaActiva = "";
+        } else if (disponible2 && tarjetaActiva != uid) {
+          cliente2.println("ALARMA");
+          Serial.println("Comando enviado: ALARMA");
+          lcd.setCursor(0, 2);
+          lcd.print("Comando: ALARMA");
+        } else {
+          tarjetaActiva = uid;
+          cliente2.println("ENCENDER"); // Comando para encender el LED
+          Serial.println("Comando enviado: ENCENDER");
+          lcd.setCursor(0, 2);
+          lcd.print("Comando: ENCENDER");
+          disponible2 = true; // Cambiar estado
         }
       }
+
     }
      else {
       Serial.println("UID no reconocido.");
