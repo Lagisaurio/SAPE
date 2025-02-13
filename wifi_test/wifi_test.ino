@@ -238,11 +238,12 @@ void loop() {
 
 
 // Sensores
-#define INFRARROJO 2
+#define INFRARROJO 15
 #define TRIGGER    23
 #define ECHO       22
 #define GALGA_DT   19
 #define GALGA_SCK  18
+#define CERRADURA  26
 
 // Constantes de medición
 #define DISTANCIA_MIN   20
@@ -388,11 +389,6 @@ void loop() {
   galga_test();
   infrarrojo_test();
 
-  if(salidaGalga && ultrasonicoDetecta && irDetecta ){
-    digitalWrite(salidaPin, HIGH);
-  } else {
-    digitalWrite(salidaPin, LOW);
-  }
 
     // Verificar si el cliente sigue conectado
   if (!cliente.connected()) {
@@ -412,6 +408,7 @@ void loop() {
     if (comando == "ENCENDER") {
       digitalWrite(ledPin, HIGH);
       digitalWrite(ledPin12, LOW);
+      digitalWrite(CERRADURA, HIGH);
       Serial.println("LED encendido.");
     } else if (comando == "APAGAR") {
       digitalWrite(ledPin, LOW);
@@ -432,5 +429,13 @@ void loop() {
       delay(500);
       Serial.println("Alarma");
     }
+  }
+
+  if(salidaGalga && ultrasonicoDetecta && irDetecta ){
+    digitalWrite(salidaPin, HIGH);
+    Serial.println("Objeto reconocido");
+  } else {
+    digitalWrite(salidaPin, LOW);
+    Serial.println("No se encuentra objeto");
   }
 }
