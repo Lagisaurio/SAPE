@@ -13,12 +13,12 @@
 */
 
 /* ------------      LIBRERÍAS      ------------ */
-#include <WIFI.h>
+#include <WiFi.h>
 #include <HX711.h>
 
 /* ------------ DEFINICIÓN DE PINES ------------ */
   //Infrarrojo
-#define IR_PIN                15  // Pin del ESP32 para la lectura de la señal del sensor infrarrojo
+#define IR_PIN                2  // Pin del ESP32 para la lectura de la señal del sensor infrarrojo
 
   //Ultrasonico
 #define TRIGGER_PIN           23  // Pin del ESP32 conectado al pin de disparo del sensor ultrasónico
@@ -124,7 +124,7 @@ void infrarrojo(){
 }
 
 // 4. Función de detección de peso por medio de celda de carga
-void galga_test() {
+void galga() {
 
   float lectura = scale.get_units(10);
   
@@ -183,7 +183,7 @@ void setup() {
   pinMode(LED_ALARMA, OUTPUT);
   pinMode(CERRADURA_PIN, OUTPUT);
 
-  pinMode(LED_GALGA, OUTPUT):
+  pinMode(LED_GALGA, OUTPUT);
   pinMode(LED_ULTRASONICO, OUTPUT);
 
   // Valores iniciales
@@ -192,7 +192,7 @@ void setup() {
   digitalWrite(LED_ALARMA, LOW);
   digitalWrite(LED_SENSADO, LOW);
   digitalWrite(LED_GALGA, LOW);
-  digitalWrite(LED_ERROR, LOW);
+  //digitalWrite(LED_ERROR, LOW);
 
   // Inicializa el sensor ultrasónico
   digitalWrite(TRIGGER_PIN, LOW);
@@ -204,7 +204,7 @@ void setup() {
 
   // Inicializa conexión WIFI
   WiFi.begin(ssid, password);
-  while(WiFi.status() != WL_CONNeCTED) {
+  while(WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
@@ -232,26 +232,28 @@ void loop() {
   galga();
   infrarrojo();
 
+  
+
+  if(cliente.available()) {
+    String comando = cliente.readStringUntil('\n');
+    comando.trim();
+    Serial.println("Comando recibido " + comando);
+
+    if (comando == "OCUPANDO") {
+      casillero_Ocupado(LED_OCUPADO, LED_DISPONIBLE);
+      Serial.println("Casillero ocupado");
+    } else if (comando == "LIBERANDO") {
+      casillero_Liberado(LED_OCUPADO, LED_DISPONIBLE);
+      Serial.println("Casillero liberado");
+    } else if (comando == "ALARMA"){
+      alarma(LED_ALARMA, 5);
+    }
+  }
+
   if(deteccionGalga && deteccionUltrasonico && deteccionIR) {
     digitalWrite(LED_SENSADO, HIGH);
   } else {
     digitalWrite(LED_SENSADO, LOW);
-  }
-
-  if(cliente.available()) {
-    String comando = cliente.readStringUnntil('\n');
-    comando.trim();
-    Serial.println("Comando recibido " + comando);
-
-    if (comando == "OCUPAR") {
-      casillero_Ocupado(LED_OCUPADO, LED_DISPONIBLE);
-      Serial.println("Casillero ocupado");
-    } else if (comando == "LIBERAR") {
-      casillero_Liberado(LED_OCUPADO, LED_DISPONIBLE);
-      Serial.println("Casillero liberado");
-    } else if (comando == "ALARMA"){
-      alarma(LED_ALARMA, 5)
-    }
   }
 
 /*  if  (digitalRead(TESTBUTTON_PIN)==HIGH){

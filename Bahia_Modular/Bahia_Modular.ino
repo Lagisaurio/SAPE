@@ -4,69 +4,122 @@
   Editor: Luis Fuentes
   
   Descripción:
+    Este programa controla el funcionamiento del modulo RFID-RC-522 para la identificación de tarjertas d radiofrecuencia (13.5 Mhz).
+    El programa crea una red de nombre SAPE, espera conexciones a esta misma red y una vez exista algun dispositivo conectado inicializa la lectura del RFID.
+    Al reconocer una tarjeta valida, se envia un comando "ENCENDER" (por el momento) al cliente conectado, una vez encendido, se espera que se reconozca la misma tarjeta
+    y para enviar un comando "APAGAR" (Por el momento) al cliente, en caso de que sea otra tarjeta la que se reconoce,se enviará un comando "ALARMA" que encenderá un led 
+    y un buzzer que indicaran que la tarjeta es erronea.
+    
   
 
 */
+
+/* -------------------- L I B R E R Í A S -------------------- */
 #include <WiFi.h>
 #include <SPI.h>
 #include <MFRC522.h>
 #include <EEPROM.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+/* -------------------- V A R I A B L E S  Y  C O N S T A N T E S -------------------- */
 
 // Configuración del Access Point
-const char* ssid = "SAPE.net";
-const char* password = "SAPE_2024";
+const char* ssid = "SAPE.net";                              // Nombre de la red creada
+const char* password = "SAPE_2025";                         // Contraseña de acceso a la red
 
-const int puertoTCP = 1000; // Puerto del servidor TCP
-WiFiServer servidor(puertoTCP);
+const int puertoTCP = 1000;                                 // Puerto del servidor TCP
+WiFiServer servidor(puertoTCP);                             // Objeto tipo WiFiServer que indica el puerto en que se asentará el servidor
 
 // Configuración del lector RFID
-#define SS_PIN 21
-#define RST_PIN 22
-MFRC522 rfid(SS_PIN, RST_PIN);
+#define SS_PIN 21                                           // Conexión del SS del modulo RC522
+#define RST_PIN 22                                          // Conexión del RESET del modulo RC522
+MFRC522 rfid(SS_PIN, RST_PIN);                              // Objeto de tipo MFRC522 que vincula ambos pines con el modulo
+
+LiquidCrystal_I2C lcd(0x27, 20, 4);                         // Objeto de tipo LiquidCrystal que configura el LCD
 
 // Lista de UIDs válidos
 
-const String UID_VALIDO = "63D2EB95";
+const String UID_VALIDO  = "63D2EB95";
 const String UID_VALIDO2 = "1B11E623";
 const String UID_VALIDO3 = "5D2EDE89";
 
-String tarjetaActiva ="";
+String almacenamientoTarjeta1 = "";                         // Variables auxiliares de para el almacenamiento y reconocimiento de las tarjetas
+String almacenamientoTarjeta2 = "";
 //byte almacenarUID[EEPROM_SIZE] = {};               // UID almacenado en memoria
 //byte masterUID[EEPROM_SIZE] = {0x5D, 0x2E, 0xDE, 0x89}; // UID maestro
 
-WiFiClient cliente;
+WiFiClient casillero1, casillero2;                          // Objetos de tipo WiFiClient que permite vincular las esp32 de los casilleros
 
 // Estado del LED
-bool ledEncendido = false; // Inicialmente apagado
+bool casilleroDisponible1 = true;                           // Variable auxiliar que indica si un casillero esta disponible o no.
+bool casilleroDisponible2 = true;
 
+/* -------------------- F U N C I O N E S -------------------- */
+
+// 1. Función para imprimir el dato de las tarjetas (Puede ignorarse)
+void imprime_dato_tarjeta(byte *buffer, byte bufferSize) {
+  for (byte i = 0; i < bufferSize; i++) {
+    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i], HEX);
+  }
+  Serial.println();
+}
 
 void setup() {
-  Serial.begin(115200);
-  SPI.begin();
-  rfid.PCD_Init();
+  Serial.begin(115200); 
+  SPI.begin();                                              // Inicializa comunicación SPI
+  rfid.PCD_Init();                                          // Inicializa 
+
+  Wire.begin (25, 26);                                      // Inicializa comunicación por I2C
+  lcd.init();                                               // Inicializa configuración de la pantalla LCD
+  lcd.backlight();                                          // Permite encender fondo LED de la pantalla LCD
+  lcd.setCursor(0,1);                                       // Coloca el cursor del LCD
+  lcd.print("Inicializando...");                            // Imprime en el LCD
   Serial.println("Lector RFID inicializado.");
 
-  // Configurar ESP32 como Access Point
-  WiFi.softAP(ssid, password);
+  WiFi.softAP(ssid, password);                              // Configurar ESP32 como Access Point
 
-  // Obtener la IP del AP
-  IPAddress IP = WiFi.softAPIP();
+  IPAddress IP = WiFi.softAPIP();                           // Objeto tipo IPAddress que obtiene la IP del AP
   Serial.print("Punto de acceso iniciado. IP: ");
   Serial.println(IP);
 
-  // Iniciar el servidor TCP
-  servidor.begin();
+  servidor.begin();                                         // Inicialización del servidor TCP
   Serial.println("Servidor TCP iniciado. Esperando conexiones...");
+  lcd.setCursor(0,3);
+  lcd.print("Servidor iniciado");
+
 }
 
 void loop() {
+
+  WiFiClient nuevoCasillero = servidor.available();
   // Aceptar cliente entrante
-  if (!cliente || !cliente.connected()) {
-    cliente = servidor.available();
-    if (cliente) {
-      Serial.println("Cliente conectado.");
+
+  if(nuevoCasillero) {
+    if(!casillero1) {
+      casillero1 = nuevoCasillero;
+      Serial.println("Casillero 1 conectado");
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Casillero conectado (1)");
+    } else if (!casillero2) {
+      casillero2 = nuevoCasillero;
+      Serial.println("Casillero 2 conectado");
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Casillero conectado (2)");
+    } else {
+      Serial.println("Casillero rechazado, maximo alcanzado");
+      nuevoCasillero.stop();
     }
   }
+
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Bienvenido, presente");
+  lcd.setCursor(0,1);
+  lcd.print("tarjeta en el lector");
 
   // Detectar tarjeta RFID
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
@@ -77,40 +130,50 @@ void loop() {
     }
     uid.toUpperCase();
     Serial.println("UID leído: " + uid);
-
+    lcd.clear();
     // Verificar UID y alternar estado del LED
     if (uid == UID_VALIDO || uid == UID_VALIDO2 || uid == UID_VALIDO3) {
-      if (cliente && cliente.connected()) {
-        if (ledEncendido && tarjetaActiva == uid) {
-          cliente.println("APAGAR"); // Comando para apagar el LED
-          Serial.println("Comando enviado: APAGAR");
-          ledEncendido = false; // Cambiar estado
-          tarjetaActiva = "";
-        } else if (ledEncendido && tarjetaActiva != uid) {
-          cliente.println("ALARMA");
-          Serial.println("Comando enviado: ALARMA");
-        } else {
-          tarjetaActiva = uid;
-          cliente.println("ENCENDER"); // Comando para encender el LED
-          Serial.println("Comando enviado: ENCENDER");
-          ledEncendido = true; // Cambiar estado
+      if (casillero1 && casillero1.connected() && casilleroDisponible1 && almacenamientoTarjeta2 != uid) {  
+        casilleroDisponible1 = false; // Cambiar estado
+        almacenamientoTarjeta1 = uid;
+        casillero1.println("OCUPANDO"); // Comando para apagar el LED
+        Serial.println("Comando enviado a casillero 1: OCUPANDO");
+        lcd.setCursor(0, 2);
+        lcd.print("Casillero 1 Asignado");
+      }  else if (casillero2 && casillero2.connected() && casilleroDisponible2 && almacenamientoTarjeta1 != uid) {
+        casilleroDisponible2 = false; // Cambiar estado
+        almacenamientoTarjeta2 = uid;
+        casillero1.println("OCUPANDO"); // Comando para apagar el LED
+        Serial.println("Comando enviado a casillero 2: OCUPANDO");
+        lcd.setCursor(0, 2);
+        lcd.print("Casillero 2 Asignado");
+      } else if (casillero1 && casillero1.connected() && !casilleroDisponible1 && almacenamientoTarjeta1 == uid) {
+        casilleroDisponible1 = true;
+        almacenamientoTarjeta1 = "";
+        casillero1.print("LIBERANDO");
+        Serial.println("Comando enviado a casillero 1: LIBERANDO");
+        lcd.setCursor(0, 2);
+        lcd.print("Casillero 1 Liberado");
+      } else if (casillero2 && casillero1.connected() && !casilleroDisponible2 && almacenamientoTarjeta2 == uid) {
+        casilleroDisponible2 = true;
+        almacenamientoTarjeta2 = "";
+        casillero1.print("LIBERANDO");
+        Serial.println("Comando enviado a casillero 2: LIBERANDO");
+        lcd.setCursor(0, 2);
+        lcd.print("Casillero 2 Liberado");
+      } else {
+        Serial.println("No hay casilleros disponibles");
+        lcd.setCursor(0,2);
+        lcd.print("No hay casilleros disponibles");
         }
-      }
     }
-     else {
-      Serial.println("UID no reconocido.");
-    }
-
-    // Detener comunicación con la tarjeta
-    rfid.PICC_HaltA();
-    delay(1000);
+  } else {
+    Serial.println("UID no reconocido.");
   }
+
+  // Detener comunicación con la tarjeta
+  rfid.PICC_HaltA();
+  delay(1000);
 }
 
-void imprime_dato_tarjeta(byte *buffer, byte bufferSize) {
-  for (byte i = 0; i < bufferSize; i++) {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], HEX);
-  }
-  Serial.println();
-}
+
