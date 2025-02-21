@@ -18,13 +18,13 @@
 
 /* ------------ DEFINICIÓN DE PINES ------------ */
   //Infrarrojo
-#define IR_PIN                2  // Pin del ESP32 para la lectura de la señal del sensor infrarrojo
+#define IR_PIN                2   // Pin del ESP32 para la lectura de la señal del sensor infrarrojo
 
   //Ultrasonico
 #define TRIGGER_PIN           23  // Pin del ESP32 conectado al pin de disparo del sensor ultrasónico
 #define ECHO_PIN              22  // Pin del ESP32 conectado al pin de eco del sensor ultrasónico
 #define LED_ULTRASONICO       32  // Pin del ESP32 conectado a un LED para verificar el funcionamiento del sensor ultrasonico 
-#define DISTANCIA_MINIMA      10  // Distancia mínima para que el sensor ultrasonico verifique la existencia de un objeto (en centímetros)
+#define DISTANCIA_MINIMA      7  // Distancia mínima para que el sensor ultrasonico verifique la existencia de un objeto (en centímetros)
   
   //GALGA
 #define DT_GALGA              19  // Pin del ESP32 conectado al pin del controlador HX711 que refiere a la salida
@@ -40,8 +40,10 @@
 //#define ALARMA_PIN            27  // Pin del buzzer que funje como alarma
   
   //Control de cerradura
-#define CERRADURA_PIN         32  // Pin que alimenta el modulo analógico para abrir la cerradura
-  
+#define CERRADURA_VCC         26  // Pin que alimenta el modulo analógico para abrir la cerradura
+#define CERRADURA_CTRL        27  // Pin que indica el estado de la cerradura.
+
+
 /*  //Pruebas
 #define TESTBUTTON_PIN        2   // Pin para prueba del sistema
 #define TESTALARMA_PIN        4   // Pint para probar la alarma
@@ -54,8 +56,11 @@ float factor_calibracion   = 2280.0;
 bool deteccionUltrasonico  = false;    // Variable que almacena TRUE si el ultrasonico detecto algun objeto
 bool deteccionIR           = false;    // Variable que almacena TRUE si el infrarrojo detecta algun objeto
 bool deteccionGalga        = false;    // Variable que almacena TRUE si la galga detecta algun objeto
+bool estadoCerradura       = false;    // Variable que indica si la cerradura esta abierta (TRUE) o cerrada (FALSE)
+bool estadoSensado         = false;    // Variable que indica si todos los sensores detectaron el objeto(TRUE) o si no (FALSE)
+bool solicitudOcupacion    = false;    // Variable que indica si se solicita el uso de un casillero (TRUE) o si se solicita el desuso (FALSE)
 
-HX711 scale(DT_GALGA, SCK_GALGA);
+HX711 scale(DT_GALGA, SCK_GALGA);      // Objeto de tipo HX711 que prepara el funcionamiento de la celda de carga
 
 const char* ssid           = "SAPE.net";
 const char* password       = "SAPE_2024";
@@ -144,7 +149,7 @@ void galga() {
   }
 }
 
-// 5. Función de ocupación del casillro (LEDS)
+// 5. Función de ocupación del casillero (LEDS)
 void casillero_Ocupado(int ledOcupado, int ledLibre) {
 
   digitalWrite(ledOcupado, HIGH);
@@ -158,7 +163,14 @@ void casillero_Liberado(int ledOcupado, int ledLibre) {
   digitalWrite(ledLibre, HIGH);
 }
 
-// 7. Función de alarma del casillero
+// 7. Función para abrir el casillero
+void abrir_casillero() {
+  digitalWrite(CERRADURA_VCC, HIGH);
+  delay(10000);
+  digitalWrite(CERRADURA_VCC, LOW);
+}
+
+// X. Función de alarma del casillero
 void alarma(int pinAlarma, int conteo) {
   for (int i = 0; i < conteo; i++) {
     digitalWrite(pinAlarma, HIGH);
@@ -240,51 +252,50 @@ void loop() {
     Serial.println("Comando recibido " + comando);
 
     if (comando == "OCUPANDO") {
-      casillero_Ocupado(LED_OCUPADO, LED_DISPONIBLE);
+
+      estadoCerradura = true;
+      solicitudOcupacion = true;
+      abrir_casillero();
       Serial.println("Casillero ocupado");
+
     } else if (comando == "LIBERANDO") {
-      casillero_Liberado(LED_OCUPADO, LED_DISPONIBLE);
+
+      estadoCerradura = true;
+      solicitudOcupación = false;
+      abrir_casillero();
       Serial.println("Casillero liberado");
+
     } else if (comando == "ALARMA"){
+
       alarma(LED_ALARMA, 5);
+
     }
   }
 
   if(deteccionGalga && deteccionUltrasonico && deteccionIR) {
     digitalWrite(LED_SENSADO, HIGH);
+    estadoSensado = true;
   } else {
     digitalWrite(LED_SENSADO, LOW);
+    estadoSensado = false;
   }
-
-/*  if  (digitalRead(TESTBUTTON_PIN)==HIGH){
-    Serial.println("Ocupado");
-    controlLeds(true, false, false, false);
-
-    digitalWrite(CERRADURA_PIN, HIGH);
-    delay(2000);
-    digitalWrite(CERRADURA_PIN, LOW);
-
-    ultrasonico();
-    infrarrojo();
-    if(ultrasonicoDetecta || infrarrojoDetecta){
-      digitalWrite(LED_SENSADO, HIGH);
-    } else{
-      digitalWrite(LED_SENSADO, LOW);
+  
+  if (solicitudOcupacion && !estadoCerradura) {
+    if (estadoSensado) {
+      casillero_Ocupado(LED_OCUPADO, LED_DISPONIBLE);
+      Serial.println ("Ocupado");
     }
-    //galga_test();      <= Se utilizará como modulo aparte. 
+  } else if(!solicitudOcupacion && !estadoCerradura) {
+    if (estadoSensado) {
+      casillero_Liberado(LED_OCUPADO, LED_DISPONIBLE);
+      Serial.println("Liberado");
+    }
+  } else if(!solicitudOcupacion && estadoSensando) {
+    alarma(LED_ALARMA, 5 );
+    Serial.print("ERROR EN EL SISTEMA !!!");
   }
-  else if(digitalRead(TESTALARMA_PIN) == HIGH){
-    Serial.println("Error/Alarma");
-    controlLeds(false, false, true, true);
-    digitalWrite(ALARMA_PIN, HIGH);
 
-  }
-  else if(digitalRead(TESTALARMA_PIN) ==LOW && digitalRead(TESTBUTTON_PIN)==LOW) { 
-    Serial.println("Disponible");
-    controlLeds(false, true, false, false);
-    digitalWrite(ALARMA_PIN, LOW);
-  }
-  delay(500);         // Espera un tiempo antes de la próxima medición
-*/
+  casillero_Ocupado(LED_OCUPADO, LED_DISPONIBLE);
+  casillero_Liberado(LED_OCUPADO, LED_DISPONIBLE);
 }
 

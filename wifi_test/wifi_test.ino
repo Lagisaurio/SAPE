@@ -238,15 +238,16 @@ void loop() {
 
 
 // Sensores
-#define INFRARROJO 15
+#define INFRARROJO 2
 #define TRIGGER    23
 #define ECHO       22
 #define GALGA_DT   19
 #define GALGA_SCK  18
-#define CERRADURA  26
+#define CERRADURA_VCC  26
+#define CERRADURA_SGL  27
 
 // Constantes de medición
-#define DISTANCIA_MIN   20
+#define DISTANCIA_MIN   7
 
 // Configuración del Access Point
 const char* ssid = "SAPE.net";
@@ -274,6 +275,10 @@ const int salidaPin = 4;
 bool salidaGalga = false;
 bool ultrasonicoDetecta = false;
 bool irDetecta = false;
+
+bool cerraduraAbierta = false;
+bool sensadoStatus = false;
+bool solicitudCasillero = false;
 
 void galga_test(){       // Si da lecturas erroneas, reiniciar ESP32
   
@@ -362,6 +367,10 @@ void setup() {
   digitalWrite(ultrasonicoPin,LOW);
   pinMode(TRIGGER, OUTPUT);
   pinMode(ECHO, INPUT);
+  pinMode(CERRADURA_VCC, OUTPUT);
+  digitalWrite(CERRADURA_VCC, LOW);
+  pinMode(CERRADURA_SGL, INPUT);
+
 
   digitalWrite(TRIGGER, LOW);
   delayMicroseconds(2);
@@ -383,12 +392,7 @@ void setup() {
 }
 
 void loop() {
-
-
-  ultrasonico_test();
-  galga_test();
-  infrarrojo_test();
-
+  int cerraduraStatus = digitalRead(CERRADURA_SGL);
 
     // Verificar si el cliente sigue conectado
   if (!cliente.connected()) {
@@ -396,6 +400,20 @@ void loop() {
     cliente.connect(servidorIP, puertoTCP);
     delay(1000);
     return;
+  }
+
+  ultrasonico_test();
+  galga_test();
+  infrarrojo_test();
+
+  if(salidaGalga && ultrasonicoDetecta && irDetecta ){
+    digitalWrite(salidaPin, HIGH);
+    Serial.println("Objeto reconocido");
+    sensadoStatus = true;
+  } else {
+    digitalWrite(salidaPin, LOW);
+    Serial.println("No se encuentra objeto");
+    sensadoStatus = false;
   }
 
   // Leer datos del servidor
@@ -406,13 +424,19 @@ void loop() {
 
     // Controlar el LED según el comando
     if (comando == "ENCENDER") {
-      digitalWrite(ledPin, HIGH);
+      cerraduraAbierta = true;
+      solicitudCasillero = true;
       digitalWrite(ledPin12, LOW);
-      digitalWrite(CERRADURA, HIGH);
+      digitalWrite(CERRADURA_VCC, HIGH);
+      delay(10000);
+      digitalWrite(CERRADURA_VCC, LOW);
       Serial.println("LED encendido.");
     } else if (comando == "APAGAR") {
-      digitalWrite(ledPin, LOW);
-      digitalWrite(ledPin12, HIGH);
+      digitalWrite(CERRADURA_VCC, HIGH);
+      delay(10000);
+      digitalWrite(CERRADURA_VCC, LOW);
+      cerraduraAbierta = true;
+      solicitudCasillero = false;
       Serial.println("LED apagado.");
     } else if (comando == "ALARMA"){ // Cambiar por fución blink
       digitalWrite(ledPin2, HIGH);
@@ -430,12 +454,36 @@ void loop() {
       Serial.println("Alarma");
     }
   }
+  if(cerraduraStatus) {
+    Serial.println("Cerrado");
+    cerraduraAbierta = false;
 
-  if(salidaGalga && ultrasonicoDetecta && irDetecta ){
-    digitalWrite(salidaPin, HIGH);
-    Serial.println("Objeto reconocido");
-  } else {
-    digitalWrite(salidaPin, LOW);
-    Serial.println("No se encuentra objeto");
+  } else{
+    Serial.println("Abierto");
+    cerraduraAbierta = true;
+    
   }
+
+  if(solicitudCasillero  && !cerraduraAbierta) {
+    //delay(15000);
+    if(sensadoStatus) {
+      digitalWrite(ledPin, HIGH);
+      digitalWrite(ledPin12, LOW);
+      Serial.print("Ocupado");
+    } /*else {
+      Serial.println("No se ocupo el casillero");
+
+    }*/
+    
+  } else if(!solicitudCasillero && !cerraduraAbierta){
+    if(!sensadoStatus) {
+      digitalWrite(ledPin, LOW);  
+      digitalWrite(ledPin12, HIGH);
+      Serial.println("Liberado");
+    }
+  } /*else{
+    digitalWrite(ledPin2, HIGH);
+  }*/
+
+
 }
