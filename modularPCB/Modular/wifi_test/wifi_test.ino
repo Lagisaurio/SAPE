@@ -235,20 +235,18 @@ void loop() {
 
 #include <WiFi.h>
 #include "HX711.h"
-#include <LiquidCrystal_I2C.h>
 
 
 // Sensores
-#define INFRARROJO 34
+#define INFRARROJO 2
 #define TRIGGER    23
 #define ECHO       22
 #define GALGA_DT   19
 #define GALGA_SCK  18
-#define CERRADURA_VCC  26
-#define CERRADURA_SGL  35
+#define CERRADURA  26
 
 // Constantes de medición
-#define DISTANCIA_MIN   7
+#define DISTANCIA_MIN   20
 
 // Configuración del Access Point
 const char* ssid = "SAPE.net";
@@ -264,27 +262,18 @@ const int ledPin = 13;    //OCUPACIÓN
 const int ledPin12 = 12;  // !OCUPACIÓN
 const int ledPin2 = 14;   //ALARMA
 const int galgaPin = 21;
-const int buzzerPin = 27;
 const int ultrasonicoPin = 32;
 
-const int umbralIR = 1000;
-const int umbralCerradura = 1000;
 float peso_umbral = 20.0;
 float factor_calibracion = 2280.0;
 
 HX711 scale(GALGA_DT,GALGA_SCK);
 const int salidaPin = 4;
 
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-
 //volatile bool irInterrupt = false;
 bool salidaGalga = false;
 bool ultrasonicoDetecta = false;
 bool irDetecta = false;
-
-bool cerraduraAbierta = false;
-bool sensadoStatus = false;
-bool solicitudCasillero = false;
 
 void galga_test(){       // Si da lecturas erroneas, reiniciar ESP32
   
@@ -307,9 +296,8 @@ void galga_test(){       // Si da lecturas erroneas, reiniciar ESP32
 }
 
 void infrarrojo_test(){
-  int irAux = analogRead(INFRARROJO);
-
-  if(/*!irAux*/irAux < umbralIR){
+  int irAux = digitalRead(INFRARROJO);
+  if(!irAux){
 
     Serial.println("INFRARROJO NO ESTA SESANDO");
     irDetecta = false;
@@ -367,7 +355,6 @@ void setup() {
 
   pinMode(salidaPin, OUTPUT);
   digitalWrite(salidaPin, LOW);
-  
 
   pinMode(galgaPin, OUTPUT);
   digitalWrite(galgaPin,LOW);
@@ -375,17 +362,6 @@ void setup() {
   digitalWrite(ultrasonicoPin,LOW);
   pinMode(TRIGGER, OUTPUT);
   pinMode(ECHO, INPUT);
-  pinMode(INFRARROJO, INPUT);
-  pinMode(CERRADURA_VCC, OUTPUT);
-  digitalWrite(CERRADURA_VCC, LOW);
-  pinMode(CERRADURA_SGL, INPUT);
-
-  Wire.begin(15,5);
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("Inicializando...");
-
 
   digitalWrite(TRIGGER, LOW);
   delayMicroseconds(2);
@@ -401,47 +377,25 @@ void setup() {
   // Intentar conectarse al servidor TCP
   if (cliente.connect(servidorIP, puertoTCP)) {
     Serial.println("Conexión TCP establecida con el servidor.");
-    lcd.setCursor(0,1);
-    lcd.print("Conectado...  :D"); 
   } else {
     Serial.println("No se pudo conectar al servidor. Verifica la IP y el puerto.");
   }
 }
 
 void loop() {
-  int cerraduraStatus = analogRead(CERRADURA_SGL);
 
-    // Verificar si el cliente sigue conectado
-  if (!cliente.connected()) {
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Conexion Perdida");
-    lcd.setCursor(0,1);
-    lcd.print("... (._.')");
-    Serial.println("Conexión TCP perdida. Intentando reconectar...");
-    cliente.connect(servidorIP, puertoTCP);
-    delay(1000);
-    return;
-  }
 
   ultrasonico_test();
   galga_test();
   infrarrojo_test();
 
-  if(salidaGalga && ultrasonicoDetecta && irDetecta ){
-    digitalWrite(salidaPin, HIGH);
-    Serial.println("Objeto reconocido");
-    sensadoStatus = true;
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Que bonito patin :)");
-  } else {
-    digitalWrite(salidaPin, LOW);
-    Serial.println("No se encuentra objeto");
-    sensadoStatus = false;
-    /*lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Esperando Patin");*/
+
+    // Verificar si el cliente sigue conectado
+  if (!cliente.connected()) {
+    Serial.println("Conexión TCP perdida. Intentando reconectar...");
+    cliente.connect(servidorIP, puertoTCP);
+    delay(1000);
+    return;
   }
 
   // Leer datos del servidor
@@ -452,31 +406,14 @@ void loop() {
 
     // Controlar el LED según el comando
     if (comando == "ENCENDER") {
-      cerraduraAbierta = true;
-      solicitudCasillero = true;
+      digitalWrite(ledPin, HIGH);
       digitalWrite(ledPin12, LOW);
-      digitalWrite(CERRADURA_VCC, HIGH);
-      delay(10000);
-      digitalWrite(CERRADURA_VCC, LOW);
+      digitalWrite(CERRADURA, HIGH);
       Serial.println("LED encendido.");
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Abriendo Casillero");
-      lcd.setCursor(0,1);
-      lcd.print("Guarde su vehiculo ya");
     } else if (comando == "APAGAR") {
-      digitalWrite(CERRADURA_VCC, HIGH);
-      delay(10000);
-      digitalWrite(CERRADURA_VCC, LOW);
-      cerraduraAbierta = true;
-      solicitudCasillero = false;
+      digitalWrite(ledPin, LOW);
+      digitalWrite(ledPin12, HIGH);
       Serial.println("LED apagado.");
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Abriendo Casillero");
-      lcd.setCursor(0,1);
-      lcd.print("Saqué su vehiculo");
-
     } else if (comando == "ALARMA"){ // Cambiar por fución blink
       digitalWrite(ledPin2, HIGH);
       delay(500);
@@ -493,54 +430,12 @@ void loop() {
       Serial.println("Alarma");
     }
   }
-  if(cerraduraStatus > umbralCerradura) {
-    Serial.println("Cerrado");
 
-    cerraduraAbierta = false;
-
-  } else{
-    Serial.println("Abierto");
-    cerraduraAbierta = true;
+  if(salidaGalga && ultrasonicoDetecta && irDetecta ){
+    digitalWrite(salidaPin, HIGH);
+    Serial.println("Objeto reconocido");
+  } else {
+    digitalWrite(salidaPin, LOW);
+    Serial.println("No se encuentra objeto");
   }
-
-  if(cerraduraAbierta){
-    digitalWrite(buzzerPin, HIGH);
-    delay(500);
-    digitalWrite(buzzerPin, LOW);
-    delay(500);
-    digitalWrite(buzzerPin, HIGH);
-    delay(500);
-    digitalWrite(buzzerPin, LOW);
-    delay(500);
-    Serial.println("Buzzer Fin");
-  }
-
-  if(solicitudCasillero  && !cerraduraAbierta) {
-    //delay(15000);
-    if(sensadoStatus) {
-      digitalWrite(ledPin, HIGH);
-      digitalWrite(ledPin12, LOW);
-      Serial.print("Ocupado");
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Casillero OCUPADO");
-    } /*else {
-      Serial.println("No se ocupo el casillero");
-
-    }*/
-    
-  } else if(!solicitudCasillero && !cerraduraAbierta){
-    if(!sensadoStatus) {
-      digitalWrite(ledPin, LOW);  
-      digitalWrite(ledPin12, HIGH);
-      Serial.println("Liberado");
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Casillero LIBRE");
-    }
-  } /*else{
-    digitalWrite(ledPin2, HIGH);
-  }*/
-
-
 }
