@@ -164,7 +164,7 @@ void loop() {
       comando.trim();
       Serial.println("Casillero 1: " + comando);
       msjLCD("","","C1 dice: "+ comando, "");
-      if(comando == "DESOCUPADO") {
+      if(comando == "NO OCUPADO") {
         Serial.println("Se desocupo el casillero correctamente");
         casilleroOcupado1 = false;
         almacenamientoTarjeta1 ="";
@@ -178,7 +178,7 @@ void loop() {
       comando.trim();
       Serial.println("Casillero 2: " + comando);
       msjLCD("","","C2 dice: "+ comando, "");
-      if(comando == "DESOCUPADO") {
+      if(comando == "NO OCUPADO") {
         Serial.println("Se desocupo el casillero correctamente");
         casilleroOcupado2 = false;
         almacenamientoTarjeta2 ="";
