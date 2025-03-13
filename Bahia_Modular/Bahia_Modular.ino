@@ -203,7 +203,7 @@ void loop() {
 
     // Verificar UID y alternar estado del LED
     if (uid == UID_VALIDO || uid == UID_VALIDO2 || uid == UID_VALIDO3) {
-      if (casillero1 && casillero1.connected() && casilleroOcupado1 && almacenamientoTarjeta2 != uid) {  
+      if (casillero1 && casillero1.connected() && !casilleroOcupado1 && almacenamientoTarjeta2 != uid) {  
         
         casillero1.println("OCUPANDO"); // Comando para apagar el LED
         Serial.println("Comando enviado a casillero 1: OCUPANDO");

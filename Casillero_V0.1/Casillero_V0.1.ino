@@ -52,8 +52,7 @@
 #define SCL_LCD               5                 // Pin de SCL para el funcionamiento de la LCD
 
   //Control Tiempo
-#define DURACION_ESPERA_COLOCACION 1000;
-#define DURACION_CERRADURA 1000;
+
 /*  //Pruebas
 #define TESTBUTTON_PIN        2   // Pin para prueba del sistema.
 #define TESTALARMA_PIN        4   // Pint para probar la alarma.
@@ -70,6 +69,9 @@ float factor_calibracion   = 2280.0;
  //Millis
 unsigned long tCerradura = 0;
 unsigned long tEsperaColocacion = 0;
+
+const int duracionEsperaColocacion  = 10000;
+const int duracionCerradura = 10000;
 
  //Detección y estados
 bool deteccionUltrasonico  = false;             // Variable que indica si el ultrasonico detecto algun objeto (TRUE).
@@ -119,6 +121,7 @@ void ultrasonico() {
 
   // Lectura de ultrasonico
   long distancia = medir_distancia(TRIGGER_PIN, ECHO_PIN);
+  Serial.println("-----------------------------------------------------");
   Serial.print("Distancia: ");
   Serial.print(distancia);
   Serial.print(" cm   ||   ");
@@ -145,10 +148,12 @@ void infrarrojo(){
     // Si no hay lectura del infrarrojo, deteccionIR es falso, sí sí hay lectura, pasa a true
     if (irAux < umbralIR) {
       Serial.println("IR NO SENSANDO");
+      Serial.println("-----------------------------------------------------");
       deteccionIR = false;
 
     } else {
       Serial.println("IR SENSANDO");
+      Serial.println("-----------------------------------------------------");
       deteccionIR = true;
       
     }
@@ -166,12 +171,12 @@ void galga() {
 
   // Si la lectura es mayor o igual al peso configurado, enciende el led y cambia detecciónGalga a TRUE.
   if (lectura >= peso_umbral) {
-    digitalWrite(LED_SENSADO, HIGH);
+    digitalWrite(LED_GALGA, HIGH);
     deteccionGalga = true;
 
   } else {
 
-    digitalWrite(LED_SENSADO, LOW);
+    digitalWrite(LED_GALGA, LOW);
     deteccionGalga = false;
 
   }
@@ -219,8 +224,8 @@ void casillero_Liberado(int ledR, int ledG, int ledB) {
 void error_Sistema(int ledR, int ledG, int ledB){
 
   digitalWrite(ledR, HIGH);
-  digitalWrite(ledG, HIGH);
-  digitalWrite(ledB, LOW);
+  digitalWrite(ledG, LOW);
+  digitalWrite(ledB, HIGH);
 }
 
 // 10. Función para la escritura en la LCD.
@@ -243,9 +248,10 @@ void buzzer(int pinBuzzer, int conteo) {
 }
 
 // 12. Función de control de tiempo abrir cerradura
-void ctrl_Tiempo_Cerradura(){
-  if (iniciarTiempoCerradura && millis() - tCerradura >= DURACION_CERRADURA){
+void ctrl_Tiempo_Cerradura() {
+  if (iniciarTiempoCerradura && millis() - tCerradura >= duracionCerradura) {
     digitalWrite(CERRADURA_VCC, LOW);
+    Serial.println("-----------------------------------------------------");
     iniciarTiempoCerradura = false;
     if (solicitudOcupacion){
       tEsperaColocacion = millis();
@@ -254,8 +260,10 @@ void ctrl_Tiempo_Cerradura(){
   }
 }
 
+
 void setup() {
   Serial.begin(115200);
+  bahiaMod.stop();
 
   //Entradas
   pinMode(IR_PIN, INPUT);
@@ -278,7 +286,6 @@ void setup() {
   digitalWrite(LED_G, HIGH);
   digitalWrite(LED_R, LOW);
   digitalWrite(LED_B, LOW);
-  digitalWrite(LED_GALGA, LOW);
   digitalWrite(BUZZER, LOW);
   digitalWrite(LED_SENSADO, LOW);
   digitalWrite(LED_GALGA, LOW);
@@ -312,7 +319,7 @@ void setup() {
   if(bahiaMod.connect(servidorIP, puertoTCP)) {
     Serial.println("Conexión TCP establecida con el servidor.");
     digitalWrite(LED_CONEXION, HIGH);
-    msjLCD("Connectado... :D", "");
+    msjLCD("Conectado :D", "");
   } else {
     Serial.println("No se logro conectar al servidor. Verifica la IP y el puerto");
   }
@@ -321,7 +328,7 @@ void setup() {
 
 void loop() { 
 
-  Serial.print("< Cerradura Abierta: ");
+ /* Serial.print("< Cerradura Abierta: ");
   Serial.print(cerraduraAbierta);
   Serial.print(" > - < Sensado Estatus: ");
   Serial.print(estadoSensado);
@@ -329,7 +336,7 @@ void loop() {
   Serial.print(solicitudOcupacion);
   Serial.print(" > - < Liberado: ");
   Serial.print(solicitudLiberar);
-  Serial.println(" >");
+  Serial.println(" >");*/
 
   // Si el bahiaMod no se encuentra conectado al servior, muestra el mensaje "Conexión TCP perdida..."
   if (!bahiaMod.connected()) {
@@ -346,11 +353,11 @@ void loop() {
     return;
   }
 
-  // Detecta si la cerradura está abierta o cerrada
-  detectar_cerradura();
-
   // Inicia el conteo para que abra la cerradura (10s)
   ctrl_Tiempo_Cerradura();
+
+  // Detecta si la cerradura está abierta o cerrada
+  detectar_cerradura();
 
   // Se hace el sensado del objeto constantemente.
   ultrasonico();
@@ -389,7 +396,7 @@ void loop() {
 
 
   // Si todos los sensores detectan un objeto, se enciende el led de sensado y cambia el valor de estadoSensado a TRUE
-  if(deteccionScooter) {
+  if(deteccionUltrasonico && deteccionIR && deteccionGalga) {
     digitalWrite(LED_SENSADO, HIGH);
     estadoSensado = true;
   } else {
@@ -402,16 +409,17 @@ void loop() {
     if (estadoSensado) {
       casillero_Ocupado(LED_R, LED_G, LED_B);
       Serial.println ("Ocupado");
-      msjLCD("OCUPADO","Puede retirarse");
+      msjLCD("Ocupado","Puede retirarse");
       bahiaMod.println("Casillero OCUPADO");
       delay(2000);
-      msjLCD("No disponible", "Vuelva pronto :(");
+      msjLCD("Ocupado", "Vuelva pronto :(");
+      esperandoScooter = false;
       
-    } else if (millis() - tEsperaColocacion => DURACION_ESPERA_COLOCACION){
+    } else if ( millis() - tEsperaColocacion >= duracionEsperaColocacion){
       solicitudOcupacion = false;
       esperandoScooter = false;
       Serial.println("No se ocupo el casillero");
-      msjLCD("No se ocupo el casillero","");
+      msjLCD("No se ocupo","el casillero");
       bahiaMod.println("NO OCUPADO");
     }
   } else if(!solicitudOcupacion && !cerraduraAbierta && solicitudLiberar) {
@@ -419,12 +427,18 @@ void loop() {
       solicitudLiberar = false;
       casillero_Liberado(LED_R, LED_G, LED_B);
       Serial.println("Liberado");
-      msjLCD("Casillero", "Dispoible 8D");
+      msjLCD("Casillero", "Dispoible :D");
       bahiaMod.println("Casillero LIBERADO");
+    } else if(estadoSensado){
+      abrir_casillero();
+      delay (1000);
+      msjLCD("Retira el patin", "ERROR 404");
+
     }
   } else if(!solicitudOcupacion && estadoSensado) {
     error_Sistema(LED_R, LED_G, LED_B);
     Serial.print("ERROR EN EL SISTEMA !!!");
+    
   }
 
 }
