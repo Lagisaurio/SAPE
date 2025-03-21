@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2025-03-04T22:57:25Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.6.2"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 1.57,
+        "LayerNumber": 2,
+        "Name": {
+            "ProjectId": "SENSORES"
+        },
+        "Owner": "Nestor Ivan Salazar Reyes <nestor.salazar4669@alumnos.udg.mx>",
+        "Size": {
+            "X": 100,
+            "Y": 100
+        }
+    }
+}
