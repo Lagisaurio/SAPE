@@ -1,10 +1,41 @@
-/*#include "HX711.h"
 
-#define DT 19   // Pin de datos del HX711
-#define SCK 18  // Pin de reloj del HX711
-#define LED 2  // Pin donde está conectado el LED
+#include "HX711.h"
 
-HX711 scale;
+#define DT 19  // GPIO del ESP32 conectado a DT del HX711
+#define SCK 18 // GPIO del ESP32 conectado a SCK del HX711
+#define LED 2  // GPIO del ESP32 donde está el LED (puedes cambiarlo)
+
+HX711 celda(DT, SCK);
+
+float factor_escala = -555.85;
+float peso_umbral = 7.0;
+
+void setup(){
+  Serial.begin(115200);
+  Serial.println("Celda de carga");
+  celda.begin(DT, SCK);
+
+  celda.set_scale(factor_escala);
+  celda.tare();
+}
+
+void loop(){
+  int promedio = celda.get_units(10);
+
+  Serial.print("Valor en gramos: ");
+  Serial.println(promedio);
+
+  if (promedio >= peso_umbral) {
+      digitalWrite(LED, HIGH); // Enciende el LED
+  } else {
+      digitalWrite(LED, LOW); // Apaga el LED
+  }
+
+}
+
+/*
+// ------------------------------------- Prueba 1 ---------------------------------------------
+
 
 float peso_umbral = 50000.0; // Umbral en kg para encender el LED
 
@@ -38,13 +69,9 @@ void loop() {
 
     delay(500); // Esperar medio segundo para evitar lecturas rápidas
 }*/
-#include "HX711.h"
+/*
+// ------------------------------------------ PRUEBA 2 -----------------------------------------------------
 
-#define DT 19  // GPIO del ESP32 conectado a DT del HX711
-#define SCK 18 // GPIO del ESP32 conectado a SCK del HX711
-#define LED 2  // GPIO del ESP32 donde está el LED (puedes cambiarlo)
-
-HX711 scale(DT, SCK);
 
 float peso_umbral = 20.0;   // Umbral en kg para encender el LED
 float calibration_factor = 2280.0; // Ajusta este valor según la calibración
@@ -73,4 +100,4 @@ void loop() {
     }
 
     delay(10); // Pequeña pausa para estabilidad
-}
+}*/
