@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="50" unitdist="mil" unit="mm" style="lines" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mil"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
@@ -225,6 +225,28 @@
 <wire x1="-2.93" y1="7.77" x2="-2.93" y2="3.5" width="0.1524" layer="21" curve="-180"/>
 <text x="-1" y="4.5" size="3" layer="21">LM555</text>
 </package>
+<package name="LEDRGB">
+<pad name="R" x="0" y="0" drill="1.3"/>
+<pad name="GND" x="2.54" y="0" drill="1.3"/>
+<pad name="G" x="5.08" y="0" drill="1.3"/>
+<pad name="B" x="7.62" y="0" drill="1.3"/>
+<text x="1.27" y="-5.08" size="1.778" layer="21" rot="R90">R</text>
+<text x="3.81" y="-8.89" size="1.778" layer="21" rot="R90">GND</text>
+<text x="6.35" y="-5.08" size="1.778" layer="21" rot="R90">G</text>
+<text x="8.89" y="-5.08" size="1.778" layer="21" rot="R90">B</text>
+<wire x1="-2.54" y1="2.54" x2="10.16" y2="2.54" width="0.1524" layer="21"/>
+<wire x1="10.16" y1="2.54" x2="10.16" y2="-2.54" width="0.1524" layer="21"/>
+<wire x1="10.16" y1="-2.54" x2="-2.54" y2="-2.54" width="0.1524" layer="21"/>
+<wire x1="-2.54" y1="-2.54" x2="-2.54" y2="2.54" width="0.1524" layer="21"/>
+</package>
+<package name="FUSIBLE">
+<pad name="+" x="-11.5" y="0" drill="1.2" diameter="1.6764" shape="square"/>
+<pad name="-" x="11.5" y="0" drill="1.2" diameter="1.6764" shape="square"/>
+<wire x1="-11.5" y1="1.5" x2="-11.5" y2="-1.5" width="0.1524" layer="21"/>
+<wire x1="-11.5" y1="-1.5" x2="11.5" y2="-1.5" width="0.1524" layer="21"/>
+<wire x1="11.5" y1="-1.5" x2="11.5" y2="1.5" width="0.1524" layer="21"/>
+<wire x1="11.5" y1="1.5" x2="-11.5" y2="1.5" width="0.1524" layer="21"/>
+</package>
 </packages>
 <symbols>
 <symbol name="RFID">
@@ -368,6 +390,48 @@
 <wire x1="7.62" y1="-12.7" x2="7.62" y2="10.16" width="0.1524" layer="94"/>
 <wire x1="7.62" y1="10.16" x2="-7.62" y2="10.16" width="0.1524" layer="94"/>
 <wire x1="-7.62" y1="10.16" x2="-7.62" y2="-12.7" width="0.1524" layer="94"/>
+</symbol>
+<symbol name="LEDRGB">
+<pin name="R" x="-7.62" y="-12.7" length="middle" rot="R90"/>
+<pin name="CATODO" x="0" y="15.24" length="middle" rot="R270"/>
+<wire x1="-10.16" y1="-5.08" x2="-7.62" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="-7.62" y1="-5.08" x2="-5.08" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="-10.16" y1="-5.08" x2="-7.62" y2="0" width="0.1524" layer="94"/>
+<wire x1="-7.62" y1="0" x2="-5.08" y2="-5.08" width="0.1524" layer="94"/>
+<pin name="G" x="0" y="-12.7" length="middle" rot="R90"/>
+<wire x1="-2.54" y1="-5.08" x2="0" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="0" y1="-5.08" x2="2.54" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="-2.54" y1="-5.08" x2="0" y2="0" width="0.1524" layer="94"/>
+<wire x1="0" y1="0" x2="2.54" y2="-5.08" width="0.1524" layer="94"/>
+<pin name="B" x="7.62" y="-12.7" length="middle" rot="R90"/>
+<wire x1="5.08" y1="-5.08" x2="7.62" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="-5.08" x2="10.16" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="5.08" y1="-5.08" x2="7.62" y2="0" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="0" x2="10.16" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="-10.16" y1="0" x2="-7.62" y2="0" width="0.3048" layer="94"/>
+<wire x1="-7.62" y1="0" x2="-5.08" y2="0" width="0.3048" layer="94"/>
+<wire x1="-2.54" y1="0" x2="0" y2="0" width="0.3048" layer="94"/>
+<wire x1="0" y1="0" x2="2.54" y2="0" width="0.3048" layer="94"/>
+<wire x1="5.08" y1="0" x2="7.62" y2="0" width="0.3048" layer="94"/>
+<wire x1="7.62" y1="0" x2="10.16" y2="0" width="0.3048" layer="94"/>
+<wire x1="-7.62" y1="0" x2="-7.62" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="-7.62" y1="2.54" x2="0" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="0" y1="2.54" x2="7.62" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="2.54" x2="7.62" y2="0" width="0.1524" layer="94"/>
+<wire x1="0" y1="2.54" x2="0" y2="0" width="0.1524" layer="94"/>
+<wire x1="-7.62" y1="-7.62" x2="-7.62" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="0" y1="-7.62" x2="0" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="-7.62" x2="7.62" y2="-5.08" width="0.1524" layer="94"/>
+<wire x1="0" y1="10.16" x2="0" y2="2.54" width="0.1524" layer="94"/>
+</symbol>
+<symbol name="FUSIBLE">
+<pin name="+" x="-10.16" y="0" length="middle"/>
+<pin name="-" x="10.16" y="0" length="middle" rot="R180"/>
+<wire x1="-5.08" y1="2.54" x2="5.08" y2="2.54" width="0.1524" layer="94"/>
+<wire x1="5.08" y1="2.54" x2="5.08" y2="-2.54" width="0.1524" layer="94"/>
+<wire x1="5.08" y1="-2.54" x2="-5.08" y2="-2.54" width="0.1524" layer="94"/>
+<wire x1="-5.08" y1="-2.54" x2="-5.08" y2="2.54" width="0.1524" layer="94"/>
+<text x="-2.54" y="5.08" size="1.778" layer="97">FUSE</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -542,6 +606,40 @@
 <connect gate="G$1" pin="TH" pad="THRESHOLD"/>
 <connect gate="G$1" pin="TR" pad="TRIGGER"/>
 <connect gate="G$1" pin="VCC" pad="VCC"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="LEDRGB">
+<gates>
+<gate name="G$1" symbol="LEDRGB" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="LEDRGB">
+<connects>
+<connect gate="G$1" pin="B" pad="B"/>
+<connect gate="G$1" pin="CATODO" pad="GND"/>
+<connect gate="G$1" pin="G" pad="G"/>
+<connect gate="G$1" pin="R" pad="R"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="FUSIBLE">
+<gates>
+<gate name="G$1" symbol="FUSIBLE" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="FUSIBLE">
+<connects>
+<connect gate="G$1" pin="+" pad="+"/>
+<connect gate="G$1" pin="-" pad="-"/>
 </connects>
 <technologies>
 <technology name=""/>

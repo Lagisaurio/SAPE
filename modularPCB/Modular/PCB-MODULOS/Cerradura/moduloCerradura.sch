@@ -62,14 +62,6 @@
 <libraries>
 <library name="MODULAR">
 <packages>
-<package name="2N2222">
-<pad name="E" x="-2.54" y="2.54" drill="0.6" shape="square"/>
-<pad name="B" x="-2.54" y="1.27" drill="0.6" shape="square"/>
-<pad name="C" x="-2.54" y="0" drill="0.6" shape="square"/>
-<wire x1="-2.54" y1="2.54" x2="-2.54" y2="3.81" width="0.127" layer="21"/>
-<wire x1="-2.54" y1="0" x2="-2.54" y2="-1.27" width="0.127" layer="21"/>
-<wire x1="-2.54" y1="3.81" x2="-2.54" y2="-1.27" width="0.127" layer="21" curve="-253.739795"/>
-</package>
 <package name="RELEY">
 <pad name="B1" x="6" y="6.15" drill="1.3" shape="octagon"/>
 <pad name="B2" x="-6" y="6.15" drill="1.3" shape="octagon"/>
@@ -90,8 +82,33 @@
 <wire x1="1.5" y1="5" x2="3.5" y2="5" width="0.1524" layer="21" curve="-233.130102"/>
 <wire x1="3.5" y1="5" x2="5.5" y2="5" width="0.1524" layer="21" curve="-233.130102"/>
 </package>
+<package name="2N2222">
+<pad name="E" x="-2.54" y="0" drill="1.3" shape="square" rot="R90"/>
+<pad name="B" x="0" y="0" drill="1.3" rot="R90"/>
+<pad name="C" x="2.54" y="0" drill="1.3" rot="R90"/>
+<wire x1="-3.81" y1="-1.27" x2="3.81" y2="-1.27" width="0.127" layer="21"/>
+<wire x1="-3.81" y1="-1.27" x2="3.81" y2="-1.27" width="0.127" layer="21" curve="-253.739795"/>
+<text x="-3.81" y="2.54" size="1.4" layer="21">2N2222</text>
+<text x="-1.74" y="-2.91" size="1.4" layer="21" rot="R90">E</text>
+<text x="0.66" y="-2.91" size="1.4" layer="21" rot="R90">B</text>
+<text x="3.26" y="-3.01" size="1.4" layer="21" rot="R90">C</text>
+</package>
 </packages>
 <symbols>
+<symbol name="RELEY">
+<wire x1="-17.78" y1="10.16" x2="-17.78" y2="5.08" width="0.254" layer="94" curve="-233.130102"/>
+<wire x1="-17.78" y1="5.08" x2="-17.78" y2="0" width="0.254" layer="94" curve="-233.130102"/>
+<wire x1="-17.78" y1="0" x2="-17.78" y2="-5.08" width="0.254" layer="94" curve="-233.130102"/>
+<pin name="B1" x="-22.86" y="10.16" length="middle"/>
+<pin name="B2" x="-22.86" y="-5.08" length="middle"/>
+<pin name="IN" x="-2.54" y="15.24" length="middle" rot="R270"/>
+<pin name="NC" x="-5.08" y="-10.16" length="middle" rot="R90"/>
+<pin name="NA" x="0" y="-10.16" length="middle" rot="R90"/>
+<wire x1="-17.78" y1="-7.62" x2="2.54" y2="-7.62" width="0.254" layer="94"/>
+<wire x1="2.54" y1="-7.62" x2="2.54" y2="12.7" width="0.254" layer="94"/>
+<wire x1="2.54" y1="12.7" x2="-17.78" y2="12.7" width="0.254" layer="94"/>
+<wire x1="-17.78" y1="12.7" x2="-17.78" y2="-7.62" width="0.254" layer="94"/>
+</symbol>
 <symbol name="2N2222">
 <wire x1="-2.54" y1="-7.62" x2="2.54" y2="-12.7" width="0.254" layer="94"/>
 <wire x1="2.54" y1="-12.7" x2="2.54" y2="-15.24" width="0.254" layer="94"/>
@@ -108,39 +125,8 @@
 <pin name="C" x="2.54" y="5.08" length="middle" rot="R270"/>
 <pin name="E" x="2.54" y="-17.78" length="middle" rot="R90"/>
 </symbol>
-<symbol name="RELEY">
-<wire x1="-17.78" y1="10.16" x2="-17.78" y2="5.08" width="0.254" layer="94" curve="-233.130102"/>
-<wire x1="-17.78" y1="5.08" x2="-17.78" y2="0" width="0.254" layer="94" curve="-233.130102"/>
-<wire x1="-17.78" y1="0" x2="-17.78" y2="-5.08" width="0.254" layer="94" curve="-233.130102"/>
-<pin name="B1" x="-22.86" y="10.16" length="middle"/>
-<pin name="B2" x="-22.86" y="-5.08" length="middle"/>
-<pin name="IN" x="-2.54" y="15.24" length="middle" rot="R270"/>
-<pin name="NC" x="-5.08" y="-10.16" length="middle" rot="R90"/>
-<pin name="NA" x="0" y="-10.16" length="middle" rot="R90"/>
-<wire x1="-17.78" y1="-7.62" x2="2.54" y2="-7.62" width="0.254" layer="94"/>
-<wire x1="2.54" y1="-7.62" x2="2.54" y2="12.7" width="0.254" layer="94"/>
-<wire x1="2.54" y1="12.7" x2="-17.78" y2="12.7" width="0.254" layer="94"/>
-<wire x1="-17.78" y1="12.7" x2="-17.78" y2="-7.62" width="0.254" layer="94"/>
-</symbol>
 </symbols>
 <devicesets>
-<deviceset name="2N2222">
-<gates>
-<gate name="G$1" symbol="2N2222" x="0" y="5.08"/>
-</gates>
-<devices>
-<device name="" package="2N2222">
-<connects>
-<connect gate="G$1" pin="B" pad="B"/>
-<connect gate="G$1" pin="C" pad="C"/>
-<connect gate="G$1" pin="E" pad="E"/>
-</connects>
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
 <deviceset name="RELEY">
 <gates>
 <gate name="G$1" symbol="RELEY" x="5.08" y="-2.54"/>
@@ -153,6 +139,23 @@
 <connect gate="G$1" pin="IN" pad="IN"/>
 <connect gate="G$1" pin="NA" pad="NA"/>
 <connect gate="G$1" pin="NC" pad="NC"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="2N2222">
+<gates>
+<gate name="G$1" symbol="2N2222" x="0" y="5.08"/>
+</gates>
+<devices>
+<device name="" package="2N2222">
+<connects>
+<connect gate="G$1" pin="B" pad="B"/>
+<connect gate="G$1" pin="C" pad="C"/>
+<connect gate="G$1" pin="E" pad="E"/>
 </connects>
 <technologies>
 <technology name=""/>
@@ -5010,13 +5013,13 @@ general purpose rectifier, 1 A</description>
 </modules>
 <parts>
 <part name="R2" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="0204/7" package3d_urn="urn:adsk.eagle:package:23498/2" value="1k"/>
-<part name="U$1" library="MODULAR" deviceset="2N2222" device=""/>
 <part name="D1" library="diode" library_urn="urn:adsk.eagle:library:210" deviceset="1N4004" device="" package3d_urn="urn:adsk.eagle:package:43336/1"/>
 <part name="U$2" library="MODULAR" deviceset="RELEY" device=""/>
 <part name="VOLTAJE" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X2" device="" package3d_urn="urn:adsk.eagle:package:22435/2"/>
 <part name="DATO" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X2" device="" package3d_urn="urn:adsk.eagle:package:22435/2"/>
 <part name="R1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="0204/7" package3d_urn="urn:adsk.eagle:package:23498/2" value="330"/>
 <part name="JP1" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="JP2E" device="" package3d_urn="urn:adsk.eagle:package:15452/1"/>
+<part name="U$1" library="MODULAR" deviceset="2N2222" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -5032,7 +5035,6 @@ general purpose rectifier, 1 A</description>
 <attribute name="NAME" x="13.7414" y="34.29" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="18.542" y="34.29" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="U$1" gate="G$1" x="20.32" y="22.86" smashed="yes" rot="R270"/>
 <instance part="D1" gate="1" x="27.94" y="15.24" smashed="yes" rot="R270">
 <attribute name="NAME" x="28.4226" y="12.7" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="25.6286" y="15.24" size="1.778" layer="96" rot="R270"/>
@@ -5054,6 +5056,7 @@ general purpose rectifier, 1 A</description>
 <attribute name="NAME" x="58.42" y="26.67" size="1.778" layer="95" rot="R180"/>
 <attribute name="VALUE" x="58.42" y="36.195" size="1.778" layer="96" rot="R180"/>
 </instance>
+<instance part="U$1" gate="G$1" x="20.32" y="22.86" smashed="yes" rot="R270"/>
 </instances>
 <busses>
 </busses>
@@ -5068,10 +5071,10 @@ general purpose rectifier, 1 A</description>
 </net>
 <net name="GND" class="0">
 <segment>
-<pinref part="U$1" gate="G$1" pin="E"/>
 <wire x1="2.54" y1="20.32" x2="2.54" y2="17.78" width="0.1524" layer="91"/>
 <junction x="2.54" y="17.78"/>
 <label x="2.54" y="17.78" size="1.778" layer="95"/>
+<pinref part="U$1" gate="G$1" pin="E"/>
 </segment>
 <segment>
 <pinref part="VOLTAJE" gate="G$1" pin="2"/>
@@ -5145,20 +5148,20 @@ general purpose rectifier, 1 A</description>
 </net>
 <net name="N$1" class="0">
 <segment>
-<pinref part="U$1" gate="G$1" pin="B"/>
 <pinref part="R2" gate="G$1" pin="1"/>
 <wire x1="15.24" y1="30.48" x2="15.24" y2="33.02" width="0.1524" layer="91"/>
+<pinref part="U$1" gate="G$1" pin="B"/>
 </segment>
 </net>
 <net name="N$2" class="0">
 <segment>
-<pinref part="U$1" gate="G$1" pin="C"/>
 <pinref part="U$2" gate="G$1" pin="B1"/>
 <wire x1="25.4" y1="20.32" x2="27.94" y2="20.32" width="0.1524" layer="91"/>
 <pinref part="D1" gate="1" pin="A"/>
 <wire x1="27.94" y1="20.32" x2="30.48" y2="20.32" width="0.1524" layer="91"/>
 <wire x1="27.94" y1="17.78" x2="27.94" y2="20.32" width="0.1524" layer="91"/>
 <junction x="27.94" y="20.32"/>
+<pinref part="U$1" gate="G$1" pin="C"/>
 </segment>
 </net>
 <net name="N$3" class="0">

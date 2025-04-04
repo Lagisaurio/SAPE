@@ -59,10 +59,10 @@
 </layers>
 <board>
 <plain>
-<wire x1="0" y1="0" x2="38" y2="0" width="1.016" layer="20"/>
-<wire x1="38" y1="0" x2="38" y2="28" width="1.016" layer="20"/>
-<wire x1="38" y1="28" x2="0" y2="28" width="1.016" layer="20"/>
-<wire x1="0" y1="28" x2="0" y2="0" width="1.016" layer="20"/>
+<wire x1="0" y1="0" x2="93" y2="0" width="1.016" layer="20"/>
+<wire x1="93" y1="0" x2="93" y2="36" width="1.016" layer="20"/>
+<wire x1="93" y1="36" x2="0" y2="36" width="1.016" layer="20"/>
+<wire x1="0" y1="36" x2="0" y2="0" width="1.016" layer="20"/>
 <dimension x1="0" y1="23" x2="0" y2="0" x3="-4" y3="11.5" textsize="1.778" layer="21"/>
 <dimension x1="0" y1="0" x2="30" y2="0" x3="15" y3="-5" textsize="1.778" layer="21"/>
 <wire x1="25" y1="25" x2="25" y2="26" width="0.127" layer="21"/>
